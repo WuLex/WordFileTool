@@ -1,11 +1,12 @@
 ﻿using CCWin;
+using NPOI.XWPF.UserModel;
 using Word = Microsoft.Office.Interop.Word;
 
 namespace WordFile
 {
-    public partial class MainFrm : Skin_Color
+    public partial class MainForm : Form
     {
-        public MainFrm()
+        public MainForm()
         {
             InitializeComponent();
         }
@@ -13,17 +14,103 @@ namespace WordFile
         private Word.Application G_WordApplication;//定义Word应用程序字段
         private object G_Missing = Type.Missing;//定义G_Missing字段并添加引用
 
-        private void button1_Click(object sender, EventArgs e)
+        private void btnSelectFile_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog fbdia = new FolderBrowserDialog();
 
             if (fbdia.ShowDialog() == DialogResult.OK)
             {
-                textBox1.Text = fbdia.SelectedPath;
+                txtDocDirectory.Text = fbdia.SelectedPath;
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+
+
+        /// <summary>
+        /// NPOI 组件调用的方法，只支持docx后缀
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnReplaceText_Click(object sender, EventArgs e)
+        {
+            string docDirectory = txtDocDirectory.Text;
+
+            ThreadPool.QueueUserWorkItem(//开始线程池
+                (o) =>//使用Lambda表达式
+                {
+                    DirectoryInfo dires = new DirectoryInfo(docDirectory);
+                    FileInfo[] files = dires.GetFiles("*.docx");
+                
+                    foreach (FileInfo f in files)
+                    {
+                        //文件路径
+                        string filePath = f.ToString();
+                        //替换key,value字典合集
+                        var dic = new Dictionary<string, string> { };
+
+                        using (var stream = File.OpenRead(filePath))
+                        {
+                            var doc = new XWPFDocument(stream);
+
+                            try
+                            {
+                                if (txtSearchKey1.Text != "")
+                                {
+                                    dic.Add(txtSearchKey1.Text, txtReplace1.Text);
+                                }
+
+                                if (txtSearchKey2.Text != "")
+                                {
+                                    dic.Add(txtSearchKey2.Text, txtReplace2.Text);
+                                }
+
+                                if (txtSearchKey3.Text != "")
+                                {
+                                    dic.Add(txtSearchKey3.Text, txtReplace3.Text);
+                                }
+
+                                if (txtSearchKey4.Text != "")
+                                {
+                                    dic.Add(txtSearchKey4.Text, txtReplace4.Text);
+                                }
+                                if (txtSearchKey5.Text != "")
+                                {
+                                    dic.Add(txtSearchKey5.Text, txtReplace5.Text);
+                                }
+
+                                foreach (var para in doc.Paragraphs)
+                                {
+                                    //方法一
+                                    ReplaceKey(para, dic);
+                                    //方法二
+                                    //ReplaceKeyword(para, dic);
+                                }
+
+                                using (var newstream = File.Create(f.Directory +"/"+ f.Name)) // "/poutput.docx"
+                                {
+                                    doc.Write(newstream);
+                                    newstream.Flush();
+                                }
+
+                                
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("工具异常:"+ ex.Message);
+                            }
+                        }
+                    }
+                    MessageBox.Show("替换完成");
+                });
+        }
+
+
+        /// <summary>
+        /// Microsoft.Office.Interop.Word 组件调用的方法
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnReplaceTwo_Click(object sender, EventArgs e)
         {
             /*G_OpenFileDialog = new OpenFileDialog();//创建打开文件对话框对象
             G_OpenFileDialog.Filter = "*.doc|*.doc";//筛选文件
@@ -31,7 +118,7 @@ namespace WordFile
             DialogResult P_DialogResult =//弹出打开文件对话框
                 G_OpenFileDialog.ShowDialog();*/
 
-            string dir1 = textBox1.Text;
+            string dir1 = txtDocDirectory.Text;
 
             ThreadPool.QueueUserWorkItem(//开始线程池
                 (o) =>//使用Lambda表达式
@@ -59,13 +146,13 @@ namespace WordFile
                             Word.Find P_Find = //得到Find对象
                                 P_Range.Find;
 
-                            if (textBox2.Text != "")
+                            if (txtSearchKey1.Text != "")
                             {
                                 this.Invoke(//在窗体线程中执行
                                     (MethodInvoker)(() =>//使用Lambda表达式
                                     {
-                                        P_Find.Text = textBox2.Text;//设置查找的文本
-                                        P_Find.Replacement.Text = textBox3.Text;//设置替换的文本
+                                        P_Find.Text = txtSearchKey1.Text;//设置查找的文本
+                                        P_Find.Replacement.Text = txtReplace1.Text;//设置替换的文本
                                     }));
                                 object P_Replace = Word.WdReplace.wdReplaceAll;//定义替换方式对象
                                 bool P_bl = P_Find.Execute(//开始替换
@@ -75,13 +162,13 @@ namespace WordFile
                                     ref G_Missing, ref G_Missing, ref G_Missing, ref G_Missing);
                             }
 
-                            if (textBox4.Text != "")
+                            if (txtSearchKey2.Text != "")
                             {
                                 this.Invoke(//在窗体线程中执行
                                     (MethodInvoker)(() =>//使用Lambda表达式
                                     {
-                                        P_Find.Text = textBox4.Text;//设置查找的文本
-                                        P_Find.Replacement.Text = textBox5.Text;//设置替换的文本
+                                        P_Find.Text = txtSearchKey2.Text;//设置查找的文本
+                                        P_Find.Replacement.Text = txtReplace2.Text;//设置替换的文本
                                     }));
                                 object P_Replace = Word.WdReplace.wdReplaceAll;//定义替换方式对象
                                 bool P_bl = P_Find.Execute(//开始替换
@@ -91,13 +178,13 @@ namespace WordFile
                                     ref G_Missing, ref G_Missing, ref G_Missing, ref G_Missing);
                             }
 
-                            if (textBox6.Text != "")
+                            if (txtSearchKey3.Text != "")
                             {
                                 this.Invoke(//在窗体线程中执行
                                     (MethodInvoker)(() =>//使用Lambda表达式
                                     {
-                                        P_Find.Text = textBox6.Text;//设置查找的文本
-                                        P_Find.Replacement.Text = textBox7.Text;//设置替换的文本
+                                        P_Find.Text = txtSearchKey3.Text;//设置查找的文本
+                                        P_Find.Replacement.Text = txtReplace3.Text;//设置替换的文本
                                     }));
                                 object P_Replace = Word.WdReplace.wdReplaceAll;//定义替换方式对象
                                 bool P_bl = P_Find.Execute(//开始替换
@@ -107,13 +194,13 @@ namespace WordFile
                                     ref G_Missing, ref G_Missing, ref G_Missing, ref G_Missing);
                             }
 
-                            if (textBox8.Text != "")
+                            if (txtSearchKey4.Text != "")
                             {
                                 this.Invoke(//在窗体线程中执行
                                     (MethodInvoker)(() =>//使用Lambda表达式
                                     {
-                                        P_Find.Text = textBox8.Text;//设置查找的文本
-                                        P_Find.Replacement.Text = textBox9.Text;//设置替换的文本
+                                        P_Find.Text = txtSearchKey4.Text;//设置查找的文本
+                                        P_Find.Replacement.Text = txtReplace4.Text;//设置替换的文本
                                     }));
                                 object P_Replace = Word.WdReplace.wdReplaceAll;//定义替换方式对象
                                 bool P_bl = P_Find.Execute(//开始替换
@@ -122,13 +209,13 @@ namespace WordFile
                                     ref G_Missing, ref G_Missing, ref G_Missing, ref P_Replace,
                                     ref G_Missing, ref G_Missing, ref G_Missing, ref G_Missing);
                             }
-                            if (textBox10.Text != "")
+                            if (txtSearchKey5.Text != "")
                             {
                                 this.Invoke(//在窗体线程中执行
                                     (MethodInvoker)(() =>//使用Lambda表达式
                                     {
-                                        P_Find.Text = textBox10.Text;//设置查找的文本
-                                        P_Find.Replacement.Text = textBox11.Text;//设置替换的文本
+                                        P_Find.Text = txtSearchKey5.Text;//设置查找的文本
+                                        P_Find.Replacement.Text = txtReplace5.Text;//设置替换的文本
                                     }));
                                 object P_Replace = Word.WdReplace.wdReplaceAll;//定义替换方式对象
                                 bool P_bl = P_Find.Execute(//开始替换
@@ -153,9 +240,44 @@ namespace WordFile
                 });
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void btnClose_Click(object sender, EventArgs e)
         {
             this.Close();
         }
+
+        private void ReplaceKey(XWPFParagraph para, IDictionary<string, string> redic)
+        {
+            string text = para.ParagraphText; //段落文本
+            foreach (var kv in redic)
+            {
+                if (text.Contains(kv.Key))
+                {
+                    para.ReplaceText(kv.Key, kv.Value);
+                }
+            }
+            
+        }
+
+        private void ReplaceKeyword(XWPFParagraph para, IDictionary<string, string> redic)
+        {
+            string text = string.Empty;//段落文本
+            string styleid = para.Style;
+            var runs = para.Runs;
+            for (int i = 0; i < runs.Count; i++)
+            {
+                var run = runs[i];
+                text = run.ToString();  
+                foreach (var kv in redic)
+                {
+                    if (text.Contains(kv.Key))
+                    {
+                        text = text.Replace(kv.Key, kv.Value);
+                    }
+                }
+                runs[i].SetText(text, 0);
+            }
+        }
+
+
     }
 }
